@@ -16,7 +16,7 @@ if True:
     spacy_en = spacy.load('en')
 
     def tokenize_de(text):
-        return [tok.text for tok in spacy_de.tokenizer(text)]
+        return [tok.text for tok in spacy_de.tokenizer(text)] #spacy를 이용
 
     def tokenize_en(text):
         return [tok.text for tok in spacy_en.tokenizer(text)]
@@ -24,7 +24,7 @@ if True:
     BOS_WORD = '<s>'
     EOS_WORD = '</s>'
     BLANK_WORD = "<blank>"
-    SRC = data.Field(tokenize=tokenize_de, pad_token=BLANK_WORD)
+    SRC = data.Field(tokenize=tokenize_de, pad_token=BLANK_WORD) #tensor로 표시 할 수있는 공통 텍스트 처리 데이터 유형을 모델링
     TGT = data.Field(tokenize=tokenize_en, init_token = BOS_WORD, 
                      eos_token = EOS_WORD, pad_token=BLANK_WORD)
 
