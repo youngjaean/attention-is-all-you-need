@@ -11,9 +11,9 @@ def attention(query, key, value, mask=None, dropout=None):
     "Compute 'Scaled Dot Product Attention'"
     d_k = query.size(-1)
     scores = torch.matmul(query, key.transpose(-2, -1)) \
-             / math.sqrt(d_k)
+             / math.sqrt(d_k) 
     if mask is not None:
-        scores = scores.masked_fill(mask == 0, -1e9)
+        scores = scores.masked_fill(mask == 0, -1e9) #마스크가 참인 값으로 자체 텐서 요소를 채운다
     p_attn = F.softmax(scores, dim = -1)
     if dropout is not None:
         p_attn = dropout(p_attn)
