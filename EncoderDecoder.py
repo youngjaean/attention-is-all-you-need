@@ -45,12 +45,13 @@ class Generator(nn.Module):
 def clones(module, N):
     "Produce N identical layers."
     return nn.ModuleList([copy.deepcopy(module) for _ in range(N)])
+
 class Encoder(nn.Module):
     "Core encoder is a stack of N layers"
     def __init__(self, layer, N):
         super(Encoder, self).__init__()
         self.layers = clones(layer, N)
-        self.norm = LayerNorm(layer.size)
+        self.norm = nn.LayerNorm(layer.size, eps=1e-12)
         
     def forward(self, x, mask):
         "Pass the input (and mask) through each layer in turn."
@@ -58,18 +59,18 @@ class Encoder(nn.Module):
             x = layer(x, mask)
         return self.norm(x)
 
-class LayerNorm(nn.Module):
-    "Construct a layernorm module (See citation for details)."
-    def __init__(self, features, eps=1e-6):
-        super(LayerNorm, self).__init__()
-        self.a_2 = nn.Parameter(torch.ones(features))
-        self.b_2 = nn.Parameter(torch.zeros(features))
-        self.eps = eps
+# class LayerNorm(nn.Module):
+#     "Construct a layernorm module (See citation for details)."
+#     def __init__(self, features, eps=1e-6):
+#         super(LayerNorm, self).__init__()
+#         self.a_2 = nn.Parameter(torch.ones(features))
+#         self.b_2 = nn.Parameter(torch.zeros(features))
+#         self.eps = eps
 
-    def forward(self, x):
-        mean = x.mean(-1, keepdim=True)
-        std = x.std(-1, keepdim=True)
-        return self.a_2 * (x - mean) / (std + self.eps) + self.b_2
+#     def forward(self, x):
+#         mean = x.mean(-1, keepdim=True)
+#         std = x.std(-1, keepdim=True)
+#         return self.a_2 * (x - mean) / (std + self.eps) + self.b_2
 
 class SublayerConnection(nn.Module):
     """
@@ -78,7 +79,7 @@ class SublayerConnection(nn.Module):
     """
     def __init__(self, size, dropout):
         super(SublayerConnection, self).__init__()
-        self.norm = LayerNorm(size)
+        self.norm = nn.LayerNorm(size, eps=1e-12)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, sublayer):
@@ -104,7 +105,7 @@ class Decoder(nn.Module):
     def __init__(self, layer, N):
         super(Decoder, self).__init__()
         self.layers = clones(layer, N)
-        self.norm = LayerNorm(layer.size)
+        self.norm = nn.LayerNorm(layer.size, eps=1e-12)
         
     def forward(self, x, memory, src_mask, tgt_mask):
         for layer in self.layers:
@@ -127,3 +128,20 @@ class DecoderLayer(nn.Module):
         x = self.sublayer[0](x, lambda x: self.self_attn(x, x, x, tgt_mask))
         x = self.sublayer[1](x, lambda x: self.src_attn(x, m, m, src_mask))
         return self.sublayer[2](x, self.feed_forward)
+
+class Transformer(nn.Module):
+    def __init__(self, layer, N):
+        super(Transformer).__init__()
+        self.layer = layer
+        self.N = N
+
+        self.encoder = Encoder( layer, N)
+        self.decoder = Decoder( layer, N)
+    
+    # def forward(self, enc_inputs, dec_inputs):
+    #     # (bs, n_enc_seq, d_hidn), [(bs, n_head, n_enc_seq, n_enc_seq)]
+    #     enc_outputs, enc_self_attn_probs = self.encoder(enc_inputs)
+    #     # (bs, n_seq, d_hidn), [(bs, n_head, n_dec_seq, n_dec_seq)], [(bs, n_head, n_dec_seq, n_enc_seq)]
+    #     dec_outputs, dec_self_attn_probs, dec_enc_attn_probs = self.decoder(dec_inputs, enc_inputs, enc_outputs)
+    #     # (bs, n_dec_seq, n_dec_vocab), [(bs, n_head, n_enc_seq, n_enc_seq)], [(bs, n_head, n_dec_seq, n_dec_seq)], [(bs, n_head, n_dec_seq, n_enc_seq)]
+    #     return dec_outputs, enc_self_attn_probs, dec_self_attn_probs, dec_enc_attn_probs
