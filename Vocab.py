@@ -1,28 +1,14 @@
 import sentencepiece as spm
-import torch
 
-vocab_file = f"kowiki.model"
-vocab = spm.SentencePieceProcessor()
-vocab.load(vocab_file)
-
-# 입력 texts
-lines = [
-  "겨울은 추워요.",
-  "감기 조심하세요."
-]
-
-# text를 tensor로 변환
-inputs = []
-for line in lines:
-  pieces = vocab.encode_as_pieces(line)
-  ids = vocab.encode_as_ids(line)
-  inputs.append(torch.tensor(ids))
-  print(pieces)
-
-# 입력 길이가 다르므로 입력 최대 길이에 맟춰 padding(0)을 추가 해 줌
-inputs = torch.nn.utils.rnn.pad_sequence(inputs, batch_first=True, padding_value=0)
-# shape
-print(inputs.size())
-# 값
-print(inputs)
-
+corpus = "kowiki.txt"
+prefix = "kowiki"
+vocab_size = 8000
+spm.SentencePieceTrainer.train(
+    f"--input={corpus} --model_prefix={prefix} --vocab_size={vocab_size + 7}" + 
+    " --model_type=bpe" +
+    " --max_sentence_length=999999" + # 문장 최대 길이
+    " --pad_id=0 --pad_piece=[PAD]" + # pad (0)
+    " --unk_id=1 --unk_piece=[UNK]" + # unknown (1)
+    " --bos_id=2 --bos_piece=[BOS]" + # begin of sequence (2)
+    " --eos_id=3 --eos_piece=[EOS]" + # end of sequence (3)
+    " --user_defined_symbols=[SEP],[CLS],[MASK]") # 사용자 정의 토큰
